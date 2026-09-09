@@ -2,12 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import pyrebase
 from datetime import datetime
+import os
 
-# Firebase 설정
+# Firebase 설정 (환경변수에서 읽기)
 config = {
-    "apiKey": "1:386869453542:web:ad64600a19443bb9a6d127",
+    "apiKey": os.environ.get("FIREBASE_API_KEY"),
     "authDomain": "cafeteria-system-966d8.firebaseapp.com",
-    "databaseURL": "https://cafeteria-system-966d8-default-rtdb.firebaseio.com",
+    "databaseURL": os.environ.get("FIREBASE_DATABASE_URL"),
     "storageBucket": "cafeteria-system-966d8.appspot.com"
 }
 
@@ -29,7 +30,6 @@ for link in links:
         items = [item.strip() for item in menu.split(',')]
         today = datetime.now().strftime('%Y-%m-%d')
         
-        # Firebase에 저장
         db.child("menu").child(today).set(items)
         print("Firebase 저장 완료!")
         for item in items:
