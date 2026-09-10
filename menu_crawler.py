@@ -3,8 +3,9 @@ from bs4 import BeautifulSoup
 import pyrebase
 from datetime import datetime
 import os
+import pytz
 
-# Firebase 설정 (환경변수에서 읽기)
+# Firebase 설정
 config = {
     "apiKey": os.environ.get("FIREBASE_API_KEY"),
     "authDomain": "cafeteria-system-966d8.firebaseapp.com",
@@ -14,6 +15,10 @@ config = {
 
 firebase = pyrebase.initialize_app(config)
 db = firebase.database()
+
+# 한국 시간
+KST = pytz.timezone('Asia/Seoul')
+today = datetime.now(KST).strftime('%Y-%m-%d')
 
 # 크롤링
 url = "https://youngpa.sen.hs.kr/"
@@ -28,11 +33,8 @@ for link in links:
     if len(text) > 20:
         menu = text.split('(')[0].strip()
         items = [item.strip() for item in menu.split(',')]
-        import pytz
-        KST = pytz.timezone('Asia/Seoul')
-        today = datetime.now(KST).strftime('%Y-%m-%d')
         
         db.child("menu").child(today).set(items)
-        print("Firebase 저장 완료!")
+        print(f"Firebase 저장 완료! ({today})")
         for item in items:
             print(f"  - {item}")
