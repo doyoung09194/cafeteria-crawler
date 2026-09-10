@@ -17,7 +17,7 @@ jobs:
           python-version: '3.11'
           
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 pyrebase4
+        run: pip install requests beautifulsoup4 pyrebase4 pytz
         
       - name: Run crawler
         env:
