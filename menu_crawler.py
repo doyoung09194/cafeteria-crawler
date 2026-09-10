@@ -28,7 +28,9 @@ for link in links:
     if len(text) > 20:
         menu = text.split('(')[0].strip()
         items = [item.strip() for item in menu.split(',')]
-        today = datetime.now().strftime('%Y-%m-%d')
+        import pytz
+        KST = pytz.timezone('Asia/Seoul')
+        today = datetime.now(KST).strftime('%Y-%m-%d')
         
         db.child("menu").child(today).set(items)
         print("Firebase 저장 완료!")
