@@ -7,7 +7,7 @@ import pytz
 
 # Firebase 설정
 config = {
-    "apiKey": os.environ.get("FIREBASE_API_KEY"),
+    "apiKey": "AIzaSyALBfzc6-eYDiLqNKIJ6FxueVd_eS0B2DY",  # admin.js의 API_KEY와 같은 값 (따옴표는 남기세요)
     "authDomain": "cafeteria-system-966d8.firebaseapp.com",
     "databaseURL": os.environ.get("FIREBASE_DATABASE_URL"),
     "storageBucket": "cafeteria-system-966d8.appspot.com"
