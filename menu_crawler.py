@@ -60,13 +60,19 @@ def parse_detail(html):
 
 def firebase_login():
     url = ("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="
-           + os.environ["FIREBASE_API_KEY"])
+           + os.environ.get("FIREBASE_API_KEY", ""))
     r = requests.post(url, json={
-        "email": os.environ["ADMIN_EMAIL"],
-        "password": os.environ["ADMIN_PW"],
+        "email": os.environ.get("ADMIN_EMAIL", ""),
+        "password": os.environ.get("ADMIN_PW", ""),
         "returnSecureToken": True,
     }, timeout=20)
-    r.raise_for_status()
+    if not r.ok:
+        print("로그인 실패:", r.status_code, r.text[:300])
+        print("값 길이 확인:",
+              len(os.environ.get("FIREBASE_API_KEY", "")),
+              len(os.environ.get("ADMIN_EMAIL", "")),
+              len(os.environ.get("ADMIN_PW", "")))
+        r.raise_for_status()
     return r.json()["idToken"]
 
 
@@ -87,15 +93,10 @@ def main():
     print(f"대상 날짜 {len(ids)}개: {sorted(ids)[:5]} ...")
 
     menus = {}
-    first = True
     for d, mid in sorted(ids.items()):
         try:
             r = session.post(DETAIL_URL, data={"mlsvId": mid}, headers=HEADERS, timeout=20)
             r.raise_for_status()
-            if first:
-                print("--- 첫 상세 응답(앞 1500자) ---")
-                print(r.text[:1500])
-                first = False
             items = parse_detail(r.text)
             if items:
                 menus[d] = items
