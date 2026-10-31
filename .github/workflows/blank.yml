@@ -2,9 +2,10 @@ name: Menu Crawler
 
 on:
   schedule:
-    - cron: '17 20 * * *'   # 한국 시간 05:17
-    - cron: '47 20 * * *'   # 한국 시간 05:47
-    - cron: '17 21 * * *'   # 한국 시간 06:17
+    - cron: '17 20 * * *'   # KST 05:17
+    - cron: '17 21 * * *'   # KST 06:17
+    - cron: '17 23 * * *'   # KST 08:17
+    - cron: '17 1 * * *'    # KST 10:17
   workflow_dispatch:
 
 jobs:
@@ -19,7 +20,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests beautifulsoup4 pyrebase4 pytz
+        run: pip install requests beautifulsoup4 pytz
 
       - name: Run menu crawler
         env:
