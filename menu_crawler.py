@@ -3,31 +3,26 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
-import pyrebase
 
 BASE = "https://youngpa.sen.hs.kr"
 LIST_URL = BASE + "/66884/subMenu.do"
 DETAIL_URL = BASE + "/dggb/module/mlsv/selectMlsvDetailPopup.do"
 SITE_ID = "SEI_00001241"
 HEADERS = {"User-Agent": "Mozilla/5.0", "Referer": LIST_URL}
-
 KST = pytz.timezone("Asia/Seoul")
 
 
 def clean_items(text):
-    text = re.sub(r"\([^)]*\)", "", text)          # (알레르기 번호) 제거
-    parts = re.split(r"[\n,]+", text)
+    text = re.sub(r"\([^)]*\)", "", text)
     items = []
-    for p in parts:
-        p = re.sub(r"[0-9.\s]+$", "", p.strip())    # 끝에 붙은 알레르기 숫자 제거
-        p = p.strip(" ·-*")
+    for p in re.split(r"[\n,]+", text):
+        p = re.sub(r"[0-9.\s]+$", "", p.strip()).strip(" ·-*")
         if p:
             items.append(p)
     return items
 
 
 def get_month_ids(session, year, month):
-    """달력 화면에서 {날짜: 중식 mlsvId} 추출"""
     r = session.post(LIST_URL, headers=HEADERS, timeout=20, data={
         "viewType": "calendar", "siteId": SITE_ID, "arrMlsvId": "0",
         "srhMlsvYear": str(year), "srhMlsvMonth": f"{month:02d}",
@@ -50,7 +45,6 @@ def get_month_ids(session, year, month):
 
 def parse_detail(html):
     soup = BeautifulSoup(html, "html.parser")
-    # 1순위: '식단/메뉴/요리' 라벨 옆 칸
     for th in soup.find_all(["th", "dt"]):
         label = th.get_text(strip=True)
         if any(k in label for k in ("식단", "메뉴", "요리")):
@@ -59,27 +53,24 @@ def parse_detail(html):
                 items = clean_items(nxt.get_text("\n"))
                 if items:
                     return items
-    # 2순위: 가장 긴 텍스트 덩어리
     texts = [t.get_text("\n") for t in soup.find_all(["td", "dd", "p", "div"])]
     texts = [t for t in texts if len(t) > 10]
-    if texts:
-        return clean_items(max(texts, key=len))
-    return []
+    return clean_items(max(texts, key=len)) if texts else []
+
+
+def firebase_login():
+    url = ("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="
+           + os.environ["FIREBASE_API_KEY"])
+    r = requests.post(url, json={
+        "email": os.environ["ADMIN_EMAIL"],
+        "password": os.environ["ADMIN_PW"],
+        "returnSecureToken": True,
+    }, timeout=20)
+    r.raise_for_status()
+    return r.json()["idToken"]
 
 
 def main():
-    config = {
-        "apiKey": os.environ["FIREBASE_API_KEY"],
-        "authDomain": "cafeteria-system-966d8.firebaseapp.com",
-        "databaseURL": os.environ["FIREBASE_DATABASE_URL"],
-        "storageBucket": "cafeteria-system-966d8.appspot.com",
-    }
-    fb = pyrebase.initialize_app(config)
-    auth = fb.auth()
-    user = auth.sign_in_with_email_and_password(os.environ["ADMIN_EMAIL"], os.environ["ADMIN_PW"])
-    token = user["idToken"]
-    db = fb.database()
-
     now = datetime.now(KST)
     today = now.strftime("%Y-%m-%d")
     months = [(now.year, now.month)]
@@ -117,7 +108,12 @@ def main():
     if not menus:
         print("저장할 메뉴가 없습니다")
         sys.exit(1)
-    db.child("menu").update(menus, token)
+
+    token = firebase_login()
+    db_url = os.environ["FIREBASE_DATABASE_URL"].rstrip("/")
+    r = requests.patch(f"{db_url}/menu.json?auth={token}", json=menus, timeout=30)
+    print("저장 응답:", r.status_code, r.text[:200])
+    r.raise_for_status()
     print(f"저장 완료: {len(menus)}일")
 
 
