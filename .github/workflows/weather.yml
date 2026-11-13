@@ -1,0 +1,30 @@
+name: Weather Crawler
+
+on:
+  schedule:
+    - cron: '40 20,23,2,5,8,11 * * *'   # KST 05:40, 08:40, 11:40, 14:40, 17:40, 20:40 (기상청 발표 후)
+  workflow_dispatch:
+
+jobs:
+  weather:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 pytz
+
+      - name: Run weather crawler
+        env:
+          KMA_KEY: ${{ secrets.KMA_KEY }}
+          AIR_KEY: ${{ secrets.AIR_KEY }}
+          FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+          FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PW: ${{ secrets.ADMIN_PW }}
+        run: python weather_crawler.py
