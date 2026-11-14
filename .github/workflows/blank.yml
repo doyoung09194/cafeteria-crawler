@@ -7,6 +7,11 @@ on:
     - cron: '17 23 * * *'   # KST 08:17
     - cron: '17 1 * * *'    # KST 10:17
   workflow_dispatch:
+    inputs:
+      from_date:
+        description: '지운 메뉴를 되살릴 시작 날짜 (예: 2026-11-02). 비우면 오늘부터'
+        required: false
+        default: ''
 
 jobs:
   crawl:
@@ -28,4 +33,5 @@ jobs:
           FIREBASE_DATABASE_URL: ${{ secrets.FIREBASE_DATABASE_URL }}
           ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PW: ${{ secrets.ADMIN_PW }}
+          MENU_FROM: ${{ github.event.inputs.from_date }}
         run: python menu_crawler.py
