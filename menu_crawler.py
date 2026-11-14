@@ -102,13 +102,22 @@ def main():
     now = datetime.now(KST)
     today = now.strftime("%Y-%m-%d")
 
+    # 지운 메뉴를 되살릴 때: MENU_FROM=YYYY-MM-DD 를 주면 그 날짜부터 다시 가져온다 (기본은 오늘부터)
+    start = os.environ.get("MENU_FROM", "").strip()
+    if not re.match(r"\d{4}-\d{2}-\d{2}$", start):
+        start = today
+    sy, sm = int(start[:4]), int(start[5:7])
+    ey, em = now.year, now.month + MONTHS_AHEAD - 1
+    while em > 12:
+        ey, em = ey + 1, em - 12
     months = []
-    y, m = now.year, now.month
-    for _ in range(MONTHS_AHEAD):
+    y, m = sy, sm
+    while (y, m) <= (ey, em):
         months.append((y, m))
         m += 1
         if m > 12:
             y, m = y + 1, 1
+    print(f"가져올 기간: {start} ~ , 대상 월 {len(months)}개")
 
     session = requests.Session()
     ids = {}
@@ -119,7 +128,7 @@ def main():
             ids.update(got)
         except Exception as e:
             print(f"[경고] {y}-{m} 목록 실패: {e}")
-    ids = {d: i for d, i in ids.items() if d >= today}
+    ids = {d: i for d, i in ids.items() if d >= start}
     print(f"대상 날짜 {len(ids)}개")
 
     menus = {}
